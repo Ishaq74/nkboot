@@ -56,6 +56,15 @@ def load_from_csv(filename):
             return [row[0] for row in reader if row]
     return []
 
+def export_enriched_to_csv(data, filename="enriched_pages.csv"):
+    if not data or "pages" not in data:
+        return
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=data["pages"][0].keys())
+        writer.writeheader()
+        for row in data["pages"]:
+            writer.writerow(row)
+
 def is_excluded_url(url):
     url_lower = url.lower()
     domain = urlparse(url).netloc.lower()
