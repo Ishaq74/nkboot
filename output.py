@@ -25,3 +25,26 @@ def generate_markdown_table(enriched_data):
 def generate_csv(enriched_data):
     df = pd.DataFrame(enriched_data["pages"])
     return df.to_csv(index=False)
+
+def generate_markmap_markdown(structure):
+    """
+    Convertit la structure {'structure': {...}} en Markdown Markmap.
+    On utilise # pour la racine (nom du site), ## pour les catégories,
+    ### pour les pages, etc.
+    """
+    if not isinstance(structure, dict) or "structure" not in structure:
+        return "# (Structure invalide)"
+
+    md_lines = [f"# {structure.get('site_name', 'Site')}"]  # Racine
+
+    for category, data in structure["structure"].items():
+        cat_kw = data.get("mot_cle_principal_unique", category)
+        md_lines.append(f"## {category} — {cat_kw}")        # Niveau 2
+
+        # Pages de la catégorie
+        for page in data.get("pages", []):
+            p_type  = page.get("type_page", "Page")
+            p_kw    = page.get("mot_cle_principal_unique", "")
+            md_lines.append(f"### {p_type} — {p_kw}")       # Niveau 3
+
+    return "\n".join(md_lines)
