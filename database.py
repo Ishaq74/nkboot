@@ -2,6 +2,7 @@ import sqlite3
 import streamlit as st
 import json
 import csv
+from utils import export_enriched_to_csv, save_to_json
 
 DB_PATH = "seo_generator.db"
 
@@ -180,3 +181,26 @@ def export_serp_from_db(filename="serpapi_results.csv"):
         st.error(f"Erreur export SERP DB : {e}")
     finally:
         conn.close()
+
+def export_structure_from_db(filename="structure_ia.json"):
+    try:
+        structure = load_structure_from_db()
+        if structure:
+            save_to_json(filename, structure)
+            st.success(f"✅ Structure exportée dans {filename}")
+        else:
+            st.warning("❌ Aucune structure à exporter.")
+    except Exception as e:
+        st.error(f"Erreur export structure : {e}")
+
+def export_enriched_from_db(json_filename="enriched_table.json", csv_filename="enriched_pages.csv"):
+    try:
+        enriched = load_enriched_from_db()
+        if enriched:
+            save_to_json(json_filename, enriched)
+            export_enriched_to_csv(enriched, filename=csv_filename)
+            st.success(f"✅ Données enrichies exportées : {json_filename} + {csv_filename}")
+        else:
+            st.warning("❌ Aucun tableau enrichi à exporter.")
+    except Exception as e:
+        st.error(f"Erreur export enrichi : {e}")
