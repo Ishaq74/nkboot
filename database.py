@@ -11,6 +11,8 @@ def init_sqlite_db():
         cursor.execute("CREATE TABLE IF NOT EXISTS site_structures (id INTEGER PRIMARY KEY AUTOINCREMENT, structure TEXT NOT NULL)")
         cursor.execute("CREATE TABLE IF NOT EXISTS page_contents (id INTEGER PRIMARY KEY AUTOINCREMENT, page TEXT NOT NULL, url TEXT NOT NULL, content TEXT NOT NULL)")
         cursor.execute("CREATE TABLE IF NOT EXISTS enriched_pages (id INTEGER PRIMARY KEY AUTOINCREMENT, page_data TEXT NOT NULL)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS serp_results (id INTEGER PRIMARY KEY AUTOINCREMENT, result TEXT NOT NULL)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS sitemap_urls (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT NOT NULL)")
         conn.commit()
     except sqlite3.Error as e:
         st.error(f"Erreur SQLite : {e}")
@@ -42,6 +44,32 @@ def store_enriched_pages_in_sqlite(enriched_data):
             cursor.execute("INSERT INTO enriched_pages (page_data) VALUES (?)", (json.dumps(page),))
         conn.commit()
         st.success("Pages enregistrées.")
+    except sqlite3.Error as e:
+        st.error(f"Erreur SQLite : {e}")
+    finally:
+        conn.close()
+
+def store_serp_results_in_sqlite(urls):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        for url in urls:
+            cursor.execute("INSERT INTO serp_results (result) VALUES (?)", (url,))
+        conn.commit()
+        st.success("Résultats SERP enregistrés.")
+    except sqlite3.Error as e:
+        st.error(f"Erreur SQLite : {e}")
+    finally:
+        conn.close()
+
+def store_sitemap_urls_in_sqlite(urls):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        for url in urls:
+            cursor.execute("INSERT INTO sitemap_urls (url) VALUES (?)", (url,))
+        conn.commit()
+        st.success("URLs Sitemap enregistrées.")
     except sqlite3.Error as e:
         st.error(f"Erreur SQLite : {e}")
     finally:

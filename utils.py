@@ -7,6 +7,8 @@ from serpapi import GoogleSearch
 from urllib.robotparser import RobotFileParser
 from dotenv import load_dotenv
 import os
+import csv
+import json
 
 load_dotenv()
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
@@ -30,6 +32,29 @@ EXCLUDED_DOMAINS = [
 
 EXCLUDED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.pdf']
 EXCLUDED_PATHS = ['/wp-content/', '/uploads/', '/assets/', '/images/', '/media/', '/static/', '/cache/']
+
+def save_to_csv(filename, data):
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        for row in data:
+            writer.writerow([row])
+
+def save_to_json(filename, data):
+    with open(filename, mode='w', encoding='utf-8') as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+def load_from_json(filename):
+    if os.path.exists(filename):
+        with open(filename, mode='r', encoding='utf-8') as file:
+            return json.load(file)
+    return None
+
+def load_from_csv(filename):
+    if os.path.exists(filename):
+        with open(filename, mode='r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            return [row[0] for row in reader if row]
+    return []
 
 def is_excluded_url(url):
     url_lower = url.lower()
@@ -75,6 +100,7 @@ def get_sitemap_from_robots(url):
                     st.warning(f"Le sitemap par défaut {default_sitemap} est inaccessible.")
         filtered_sitemaps = [s for s in sitemaps if not is_excluded_url(s)]
         st.info(f"Sitemaps après filtrage : {filtered_sitemaps}")
+        save_to_csv("sitemaps.csv", filtered_sitemaps)
         return filtered_sitemaps
     except requests.RequestException as e:
         st.warning(f"Erreur lors de la récupération de {robots_url} : {e}")
@@ -84,6 +110,7 @@ def get_sitemap_from_robots(url):
                 response = requests.get(default_sitemap, headers=HEADERS, timeout=10)
                 response.raise_for_status()
                 st.success(f"Sitemap par défaut trouvé : {default_sitemap}")
+                save_to_csv("sitemaps.csv", [default_sitemap])
                 return [default_sitemap]
             except requests.RequestException:
                 st.warning(f"Échec de la récupération du sitemap par défaut {default_sitemap} : {e}")
@@ -138,6 +165,7 @@ def get_all_sitemaps(url, visited=None, depth=0, max_depth=5):
         st.warning(f"Échec de la récupération de {url} : {e}")
 
     st.info(f"Total URLs collectées pour {url} : {len(all_page_urls)}")
+    save_to_csv("urls_sitemap.csv", all_page_urls)
     return all_page_urls
 
 def fetch_page_content(url):
@@ -160,7 +188,6 @@ def fetch_page_content(url):
 def get_serpapi_results(keyword):
     st.info(f"Lancement de la recherche SERP pour : {keyword}")
     try:
-        # Vérifier les crédits restants avant la recherche
         account_response = requests.get(f"https://serpapi.com/account?api_key={SERPAPI_API_KEY}")
         if account_response.ok:
             account_data = account_response.json()
@@ -181,6 +208,7 @@ def get_serpapi_results(keyword):
         urls = [result["link"] for result in results.get("organic_results", [])[:10]]
         filtered_urls = [url for url in urls if not is_excluded_url(url)]
         st.info(f"Résultats SERP pour '{keyword}' après filtrage : {filtered_urls}")
+        save_to_json("serpapi_results.json", filtered_urls)
         return filtered_urls
     except Exception as e:
         st.error(f"Erreur SerpAPI : {e}")
